@@ -1,0 +1,64 @@
+name: Build Android VLESS VPN APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        gradle-version: '8.2'
+
+    - name: Auto-Detect Structure & Build APK
+      run: |
+        # 1. Flatten nested directory if zipped with root folder
+        if [ -d "VlessVpnApp-AndroidStudio" ]; then
+          cp -rn VlessVpnApp-AndroidStudio/* . || true
+        fi
+        if [ -d "VlessVpnApp" ]; then
+          cp -rn VlessVpnApp/* . || true
+        fi
+
+        # 2. Find nested Gradle root and sync
+        find . -mindepth 2 -maxdepth 2 -name "settings.gradle*" | while read f; do
+          dir=$(dirname "$f")
+          cp -rn "$dir"/* . || true
+        done
+
+        mkdir -p app/libs
+
+        if [ ! -f "gradlew" ]; then
+          gradle wrapper --gradle-version 8.2 || true
+        fi
+        chmod +x gradlew || true
+
+        if [ -f "./gradlew" ]; then
+          ./gradlew assembleDebug --stacktrace
+        else
+          gradle assembleDebug --stacktrace
+        fi
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: VlessVpn-APK
+        path: "**/*.apk"
