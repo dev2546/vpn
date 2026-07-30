@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">VLESS VPN</string>
+    <string name="vpn_service_label">VLESS Encrypted Proxy</string>
+    <string name="quick_tile_label">VLESS VPN</string>
+</resources>
